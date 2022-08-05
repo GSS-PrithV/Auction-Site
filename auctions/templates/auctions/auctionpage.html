@@ -1,0 +1,96 @@
+{% extends "auctions/layout.html" %}
+
+{% block body %}
+    <h1>Listing: {{ auction.title  }}</h1>
+    <h3>Category: {{ auction.category }} </h3>
+    {% if auction.active %}
+
+        {% if auction.Thumbnail %}
+        <img src="{{ auction.Thumbnail}}"" width="400" height="auto">
+        {% endif %}
+
+        <p>Description: {{ auction.description }} </p>
+
+        {% if auction.CurrentBid > auction.StartingBid %} 
+            <h4>Current Bid: ${{ auction.CurrentBid }} </h4>
+        {% else %}
+            <h4>Starting Bid: ${{ auction.StartingBid}} </h4>
+        {% endif %}
+
+        {% if auction.bid_item.all.last.user == request.user %}
+            {% if auction.active %}
+                <b>Your bid is the current bid.</b>
+            {% else %}
+                <b>You won the auction!</b>
+            {% endif %}
+        {% endif %}
+
+        {% if request.user.is_authenticated and auction.active %}
+            <form method="POST" action="{% url 'newbid' auction.id %}">
+                {% csrf_token %}
+                <div>
+                    {{ bid.amount }}
+                    <input type="submit" value="Place Bid" />
+                </div>
+            </form>
+        {% endif %}
+
+        {% if request.user.is_authenticated %}
+            <form method="POST" action="{% url 'watch' auction.id %}">
+                {% csrf_token%}
+                <div>
+                    {% if auction in request.user.watchlist.all %}
+                        <input type="submit" value="Remove from Watchlist" />
+                    {% else %}
+                        <input type="submit" value="Add to Watchlist" />
+                    {% endif %}
+                </div>
+            </form>
+         {% endif %}
+        
+         {% if request.user.is_authenticated and request.user == auction.owner %}
+            <form method="POST" action="{% url 'close' auction.id %}">
+                {% csrf_token %}
+                <div>
+                    <input type="submit" value="Close Auction" />
+                </div>
+            </form>
+        {% endif %}
+    {% else %}
+    <div><b>This auction has ended</b></div>
+    {% if auction.bid_item.all.last.user == request.user %}
+            {% if auction.active %}
+                <b>Your bid is the current bid.</b>
+            {% else %}
+                <b>{{auction.bid_item.all.last.user}} has won the auction!</b>
+            {% endif %}
+        {% endif %}
+    {% endif %}
+
+    {% if auction.active %}
+    <div class="card-body">
+        <h6>New Comment</h6>
+    {% if request.user.is_authenticated %}
+        <form method="POST" action="{% url 'newcomment' auction.id %}">
+            {% csrf_token %}
+            {{ commentform.comment }}
+                <div>
+                   <input type="submit" value="Post a comment" />
+                </div>
+        </form>
+    {% endif %}
+    </div>
+
+   <h5>Comments</h5>
+    {% for comment in auction.commentor.all %}
+        <div >
+            <div class="card-body">
+                <h6 class="card-title">{{ comment.user }} posted  on {{ comment.time }}</h6>
+                <h4>{{comment.comment}}</h4>
+            </div>
+        </div>
+    {% endfor %}
+    </div>
+    {% endif %}
+
+{% endblock %}
